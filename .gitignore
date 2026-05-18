@@ -1,0 +1,25 @@
+# Backups gerados pelo script
+*.bak
+
+# Logs
+*.log
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Credenciais / secrets
+*.json
+*.key
+
+# Arquivos temporários
+*.tmp
+~$*
+
+# VS Code
+.vscode/
+
+# Windows
+Thumbs.db
+desktop.ini
