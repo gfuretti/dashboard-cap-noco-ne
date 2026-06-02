@@ -150729,13 +150729,23 @@ function populateFilters(){
 // Cascade: ao mudar SVC Origem, atualiza as Saídas LM disponíveis
 function onSvcChange(){
   const fS=gvs('f-svc'),fR=gvs('f-reg'),fR2=gvs('f-reg2');
-  const validSaidas=[...new Set(PLAN_DATA.filter(p=>{
+  // Saídas com plano individual
+  const fromPlan=PLAN_DATA.filter(p=>{
     const dp=DE_PARA[p.saida_lm]||{};
     if(fS.size&&!fS.has(dp.svc_origem))return false;
     if(fR.size&&!fR.has(dp.macro))return false;
     if(fR2.size&&!fR2.has(dp.regional))return false;
     return true;
-  }).map(p=>p.saida_lm))].sort();
+  }).map(p=>p.saida_lm);
+  // Saídas do DE_PARA para o SVC selecionado (XPTs sem plano individual também aparecem)
+  const fromDePara=Object.entries(DE_PARA)
+    .filter(([sl,dp])=>{
+      if(fS.size&&!fS.has(dp.svc_origem))return false;
+      if(fR.size&&!fR.has(dp.macro))return false;
+      if(fR2.size&&!fR2.has(dp.regional))return false;
+      return true;
+    }).map(([sl])=>sl);
+  const validSaidas=[...new Set([...fromPlan,...fromDePara])].sort();
   fillSel('f-saida',validSaidas);
   applyFilters();
 }
@@ -150784,6 +150794,10 @@ function applyFilters(){
     return true;
   });
   const validSl=new Set(filteredPlan.map(p=>p.saida_lm));
+  // Inclui XPTs do DE_PARA para o SVC selecionado (dados reais sem plano individual)
+  if(fS.size){Object.entries(DE_PARA).forEach(([sl,dp])=>{if(fS.has(dp.svc_origem))validSl.add(sl);});}
+  // Inclui saídas explicitamente selecionadas no filtro f-saida
+  fSa.forEach(sl=>validSl.add(sl));
   filteredDaily=DAILY_DATA.filter(d=>{
     if(!validSl.has(d.saida_lm))return false;
     if(fSem.size&&!fSem.has(d.semana))return false;
