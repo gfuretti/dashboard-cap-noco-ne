@@ -1,0 +1,45 @@
+name: Update Dashboard
+
+on:
+  schedule:
+    - cron: '0 * * * *'   # toda hora, no minuto 0
+  workflow_dispatch:        # permite rodar manualmente pelo GitHub
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repositório
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependências
+        run: pip install google-cloud-bigquery db-dtypes google-api-python-client google-auth
+
+      - name: Escrever chave da service account
+        run: echo '${{ secrets.GCP_SA_KEY }}' > sa_key.json
+
+      - name: Atualizar dashboard
+        run: python update_dashboard.py
+        env:
+          SA_KEY_PATH: sa_key.json
+          DASHBOARD_PATH: dashboard_cap_noco_ne_v2.html
+
+      - name: Limpar chave
+        if: always()
+        run: rm -f sa_key.json
+
+      - name: Commit e push se houver mudança
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add dashboard_cap_noco_ne_v2.html
+          git diff --cached --quiet || git commit -m "auto: update $(date +'%d/%m %H:%M UTC')"
+          git push
